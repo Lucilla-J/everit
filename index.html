@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資訊部問題回報系統</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════
+       T1-2｜Header
+  ══════════════════════════════ -->
+  <header>
+    <h1>📋 資訊部問題回報系統</h1>
+  </header>
+
+  <main>
+
+    <!-- ══════════════════════════════
+         T1-3｜頁籤列
+    ══════════════════════════════ -->
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true"  aria-controls="tab-list"   id="btn-list"   onclick="switchTab('list',   this)">問題列表</button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-form"   id="btn-form"   onclick="switchTab('form',   this)">新增回報</button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-report" id="btn-report" onclick="switchTab('report', this)">統計報表</button>
+    </div>
+
+    <!-- ══════════════════════════════
+         T1-4｜頁籤 1：問題列表
+    ══════════════════════════════ -->
+    <div id="tab-list" class="tab-panel active" role="tabpanel" aria-labelledby="btn-list">
+
+      <!-- 篩選列 -->
+      <div class="card filter-card">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="f-type">系統類別</label>
+            <select id="f-type">
+              <option value="">全部</option>
+              <option>MES</option>
+              <option>TIPTOP</option>
+              <option>其他</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="f-dept">所屬部門</label>
+            <select id="f-dept">
+              <option value="">全部</option>
+              <option>資訊部</option>
+              <option>生產部</option>
+              <option>品保部</option>
+              <option>其他</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="f-status">狀態</label>
+            <select id="f-status">
+              <option value="">全部</option>
+              <option>待處理</option>
+              <option>處理中</option>
+              <option>已解決</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="f-person">回報人員</label>
+            <input type="text" id="f-person" placeholder="輸入姓名">
+          </div>
+          <div class="filter-group">
+            <label for="f-owner">負責人員</label>
+            <input type="text" id="f-owner-filter" placeholder="輸入姓名">
+          </div>
+          <div class="filter-group">
+            <label for="f-date-from">日期起</label>
+            <input type="date" id="f-date-from">
+          </div>
+          <div class="filter-group">
+            <label for="f-date-to">日期迄</label>
+            <input type="date" id="f-date-to">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" onclick="applyFilter()">篩選</button>
+            <button class="btn btn-outline" onclick="clearFilter()">清除</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 問題列表表格 -->
+      <div class="card">
+        <div class="list-header">
+          <span class="card-title">問題列表（<span id="count">0</span> 筆）</span>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ 匯出 CSV</button>
+        </div>
+        <div class="table-wrapper">
+          <table id="issue-table">
+            <thead>
+              <tr>
+                <th style="width:100px;">編號</th>
+                <th style="min-width:220px;">標題</th>
+                <th style="width:70px;">類別</th>
+                <th style="width:110px;">系統名稱</th>
+                <th style="width:70px;">部門</th>
+                <th style="width:70px;">回報人</th>
+                <th style="width:70px;">負責人</th>
+                <th style="width:72px;">狀態</th>
+                <th style="width:90px;">回報日期</th>
+                <th style="width:90px;">需求完成</th>
+                <th style="width:130px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="issue-tbody">
+              <tr class="empty-row">
+                <td colspan="11">目前尚無資料，請等待頁面載入或新增問題回報。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         T1-5｜頁籤 2：新增回報
+    ══════════════════════════════ -->
+    <div id="tab-form" class="tab-panel" role="tabpanel" aria-labelledby="btn-form">
+      <div class="card">
+        <h2 class="card-title">新增問題回報</h2>
+        <form id="report-form" novalidate>
+          <div class="form-grid">
+
+            <div class="form-group full">
+              <label for="f-title">問題標題 <span class="required">*</span></label>
+              <input type="text" id="f-title" placeholder="請輸入問題標題" autocomplete="off">
+              <span class="field-error" id="err-title"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="f-sys">系統類別 <span class="required">*</span></label>
+              <select id="f-sys">
+                <option value="">請選擇</option>
+                <option>MES</option>
+                <option>TIPTOP</option>
+                <option>其他</option>
+              </select>
+              <span class="field-error" id="err-sys"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="f-sys-name">需求系統名稱（代號）</label>
+              <input type="text" id="f-sys-name" placeholder="例如：MES 拋轉模組、TIPTOP 採購單" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="f-dep">所屬部門 <span class="required">*</span></label>
+              <select id="f-dep">
+                <option value="">請選擇</option>
+                <option>資訊部</option>
+                <option>生產部</option>
+                <option>品保部</option>
+                <option>其他</option>
+              </select>
+              <span class="field-error" id="err-dep"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="f-reporter">回報人員 <span class="required">*</span></label>
+              <input type="text" id="f-reporter" placeholder="請輸入姓名" autocomplete="off">
+              <span class="field-error" id="err-reporter"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="f-owner">負責人員</label>
+              <input type="text" id="f-owner" placeholder="可稍後指派" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="f-created-at">回報日期 <span class="required">*</span></label>
+              <input type="date" id="f-created-at">
+              <span class="field-error" id="err-created-at"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="f-expect-date">申請人需求完成時間</label>
+              <input type="date" id="f-expect-date">
+            </div>
+
+            <div class="form-group full">
+              <label for="f-desc">問題說明 <span class="required">*</span></label>
+              <textarea id="f-desc" rows="5" placeholder="請詳細描述問題內容、發生步驟、錯誤訊息…"></textarea>
+              <span class="field-error" id="err-desc"></span>
+            </div>
+
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="clearForm()">清除</button>
+            <button type="button" class="btn btn-primary" onclick="submitForm()">送出回報</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         T1-6｜頁籤 3：統計報表
+    ══════════════════════════════ -->
+    <div id="tab-report" class="tab-panel" role="tabpanel" aria-labelledby="btn-report">
+
+      <!-- US-05 AC-2｜統計篩選列 -->
+      <div class="card filter-card">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="r-month">月份</label>
+            <input type="month" id="r-month">
+          </div>
+          <div class="filter-group">
+            <label for="r-date-from">日期起</label>
+            <input type="date" id="r-date-from">
+          </div>
+          <div class="filter-group">
+            <label for="r-date-to">日期迄</label>
+            <input type="date" id="r-date-to">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" onclick="applyReportFilter()">套用</button>
+            <button class="btn btn-outline" onclick="clearReportFilter()">清除</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 摘要數字卡 -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-num" id="s-total">0</div>
+          <div class="stat-label">總回報件數</div>
+        </div>
+        <div class="stat-card stat-warn">
+          <div class="stat-num" id="s-wait">0</div>
+          <div class="stat-label">待處理</div>
+        </div>
+        <div class="stat-card stat-doing">
+          <div class="stat-num" id="s-doing">0</div>
+          <div class="stat-label">處理中</div>
+        </div>
+        <div class="stat-card stat-done">
+          <div class="stat-num" id="s-done">0</div>
+          <div class="stat-label">已解決</div>
+        </div>
+      </div>
+
+      <!-- SVG 趨勢圖（T1-6 佔位，T3-13 填入內容） -->
+      <div class="card">
+        <h2 class="card-title">每月回報趨勢</h2>
+        <div class="chart-wrapper">
+          <svg id="trend-chart" viewBox="0 0 600 160" aria-label="每月回報件數趨勢圖">
+            <!-- 由 app.js drawTrendChart() 動態填入 -->
+          </svg>
+        </div>
+      </div>
+
+      <!-- 人員處理統計 -->
+      <div class="card">
+        <div class="list-header">
+          <span class="card-title">人員處理統計</span>
+          <button class="btn btn-outline btn-sm" onclick="exportStatCSV()">⬇ 匯出 CSV</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="stat-table">
+            <thead>
+              <tr>
+                <th>負責人員</th>
+                <th>總件數</th>
+                <th>已解決</th>
+                <th>處理中</th>
+                <th>待處理</th>
+                <th>平均處理時間（小時）</th>
+              </tr>
+            </thead>
+            <tbody id="stat-tbody">
+              <tr class="empty-row">
+                <td colspan="6">尚無統計資料。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /tab-report -->
+
+  </main>
+
+  <!-- ══════════════════════════════
+       T1-7｜詳細彈窗
+  ══════════════════════════════ -->
+  <dialog id="detail-modal" aria-modal="true" aria-labelledby="detail-title">
+    <div class="modal-inner">
+      <button class="modal-close" onclick="document.getElementById('detail-modal').close()" aria-label="關閉">✕</button>
+      <h3 class="modal-title" id="detail-title"></h3>
+
+      <!-- 基本資料欄位區 -->
+      <table class="detail-table" id="detail-fields">
+        <!-- 由 app.js openDetail() 填入 -->
+      </table>
+
+      <!-- 問題說明區 -->
+      <p class="detail-desc" id="detail-desc"></p>
+
+      <!-- 操作按鈕區 -->
+      <div class="modal-actions" id="detail-actions">
+        <!-- 由 app.js openDetail() 依狀態動態填入 -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ══════════════════════════════
+       T1-8｜編輯彈窗
+  ══════════════════════════════ -->
+  <dialog id="edit-modal" aria-modal="true" aria-labelledby="edit-title">
+    <div class="modal-inner">
+      <button class="modal-close" onclick="document.getElementById('edit-modal').close()" aria-label="關閉">✕</button>
+      <h3 class="modal-title" id="edit-title">✏️ 編輯問題回報</h3>
+
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <label for="e-title">問題標題 <span class="required">*</span></label>
+          <input type="text" id="e-title" autocomplete="off">
+          <span class="field-error" id="err-e-title"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="e-sys">系統類別</label>
+          <select id="e-sys">
+            <option>MES</option>
+            <option>TIPTOP</option>
+            <option>其他</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="e-sys-name">需求系統名稱（代號）</label>
+          <input type="text" id="e-sys-name" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="e-dept">所屬部門</label>
+          <select id="e-dept">
+            <option>資訊部</option>
+            <option>生產部</option>
+            <option>品保部</option>
+            <option>其他</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="e-reporter">回報人員</label>
+          <input type="text" id="e-reporter" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="e-owner">負責人員</label>
+          <input type="text" id="e-owner" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="e-status">狀態</label>
+          <select id="e-status">
+            <option>待處理</option>
+            <option>處理中</option>
+            <option>已解決</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="e-expect-date">申請人需求完成時間</label>
+          <input type="date" id="e-expect-date">
+        </div>
+
+        <div class="form-group full">
+          <label for="e-desc">問題說明</label>
+          <textarea id="e-desc" rows="4"></textarea>
+        </div>
+
+        <div class="form-group full">
+          <label for="e-note">備註說明（IT 填寫）</label>
+          <textarea id="e-note" rows="3" placeholder="測試問題或需求留意…"></textarea>
+        </div>
+
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveEdit()">儲存</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('edit-modal').close()">取消</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
